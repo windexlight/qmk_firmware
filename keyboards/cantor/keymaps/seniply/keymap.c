@@ -70,8 +70,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_NUM] = LAYOUT_split_3x6_3(
         KC_TRNS, KC_NO, KC_NO,  KC_NO,  KC_DOT,  KC_NUM,      KC_EQL,  KC_7, KC_8, KC_9, KC_PLUS, KC_TRNS,
         KC_TRNS, _LALT, _LGUI,  _LSFT,  _LCTL,   _RALT,       KC_ASTR, KC_4, KC_5, KC_6, KC_MINS, KC_TRNS,
-        KC_TRNS, KC_NO, KC_APP, KC_TAB, KC_BSPC, KC_ENT,      KC_0,    KC_1, KC_2, KC_3, KC_SLSH, KC_TRNS,
-                              KC_TRNS, KC_TRNS, KC_TRNS,      KC_TRNS, KC_TRNS, KC_TRNS
+        KC_TRNS, KC_NO, KC_APP, KC_TAB, KC_BSPC, KC_ENT,      KC_DOT,  KC_1, KC_2, KC_3, KC_SLSH, KC_TRNS,
+                              KC_TRNS, KC_TRNS, KC_TRNS,      KC_TRNS, KC_TRNS, KC_0
     ),
     [_MSE] = LAYOUT_split_3x6_3(
         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,  MS_WHLU, MS_WHLL, MS_UP, MS_WHLR, KC_TRNS, KC_TRNS,
