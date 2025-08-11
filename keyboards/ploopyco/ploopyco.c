@@ -139,7 +139,11 @@ void cycle_dpi(void) {
 }
 
 report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
+#ifdef PLOOPY_DRAGSCROLL_SCROLLOCK
+    if (is_drag_scroll || host_keyboard_led_state().scroll_lock) {
+#else
     if (is_drag_scroll) {
+#endif
         scroll_accumulated_h += (float)mouse_report.x / PLOOPY_DRAGSCROLL_DIVISOR_H;
         scroll_accumulated_v += (float)mouse_report.y / PLOOPY_DRAGSCROLL_DIVISOR_V;
 
