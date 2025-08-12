@@ -67,6 +67,10 @@ bool  is_scroll_clicked    = false;
 bool  is_drag_scroll       = false;
 float scroll_accumulated_h = 0;
 float scroll_accumulated_v = 0;
+#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+uint32_t last_scroll_time = 0;
+#endif
+
 
 #ifdef ENCODER_ENABLE
 uint16_t lastScroll        = 0; // Previous confirmed wheel event
@@ -147,28 +151,44 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
         scroll_accumulated_h += (float)mouse_report.x / PLOOPY_DRAGSCROLL_DIVISOR_H;
         scroll_accumulated_v += (float)mouse_report.y / PLOOPY_DRAGSCROLL_DIVISOR_V;
 
-        // Assign integer parts of accumulated scroll values to the mouse report
-        mouse_report.h = (int8_t)scroll_accumulated_h;
+#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+        if (timer_elapsed32(last_scroll_time) < 16) {
+            mouse_report.h = 0;
+            mouse_report.v = 0;
+        } else {
+            last_scroll_time = timer_read32();
+#endif
+            // Assign integer parts of accumulated scroll values to the mouse report
+            mouse_report.h = (int8_t)scroll_accumulated_h;
 #ifdef PLOOPY_DRAGSCROLL_INVERT
-        mouse_report.v = -(int8_t)scroll_accumulated_v;
+            mouse_report.v = -(int8_t)scroll_accumulated_v;
 #else
-        mouse_report.v = (int8_t)scroll_accumulated_v;
+            mouse_report.v = (int8_t)scroll_accumulated_v;
 #endif
 
-        // Update accumulated scroll values by subtracting the integer parts
-        scroll_accumulated_h -= (int8_t)scroll_accumulated_h;
-        scroll_accumulated_v -= (int8_t)scroll_accumulated_v;
+            // Update accumulated scroll values by subtracting the integer parts
+            scroll_accumulated_h -= (int8_t)scroll_accumulated_h;
+            scroll_accumulated_v -= (int8_t)scroll_accumulated_v;
+#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+        }
+#endif
 
         // Clear the X and Y values of the mouse report
-        mouse_report.x = 0;
-        mouse_report.y = 0;
-
         mouse_report.x = 0;
         mouse_report.y = 0;
     }
 
     return pointing_device_task_user(mouse_report);
 }
+
+#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+void housekeeping_task_kb(void) {
+    if (timer_elapsed32(last_scroll_time) > 100) {
+        scroll_accumulated_h = 0;
+        scroll_accumulated_v = 0;
+    }
+}
+#endif
 
 bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
     if (debug_mouse) {
