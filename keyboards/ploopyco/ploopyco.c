@@ -65,10 +65,14 @@ uint16_t          dpi_array[] = PLOOPY_DPI_OPTIONS;
 // Trackball State
 bool  is_scroll_clicked    = false;
 bool  is_drag_scroll       = false;
+bool  is_scroll_snap       = false;
 float scroll_accumulated_h = 0;
 float scroll_accumulated_v = 0;
 #ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
 uint32_t last_scroll_time = 0;
+typedef int16_t scroll_value_t;
+#else
+typedef int8_t scroll_value_t;
 #endif
 
 
@@ -136,6 +140,12 @@ void toggle_drag_scroll(void) {
     is_drag_scroll ^= 1;
 }
 
+void toggle_scroll_snap(void) {
+    is_scroll_snap ^= 1;
+}
+
+
+
 void cycle_dpi(void) {
     keyboard_config.dpi_config = (keyboard_config.dpi_config + 1) % DPI_OPTION_SIZE;
     eeconfig_update_kb(keyboard_config.raw);
@@ -148,7 +158,11 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
 #else
     if (is_drag_scroll) {
 #endif
-        scroll_accumulated_h += (float)mouse_report.x / PLOOPY_DRAGSCROLL_DIVISOR_H;
+        if (is_scroll_snap) {
+            scroll_accumulated_h = 0;
+        } else {
+            scroll_accumulated_h += (float)mouse_report.x / PLOOPY_DRAGSCROLL_DIVISOR_H;
+        }
         scroll_accumulated_v += (float)mouse_report.y / PLOOPY_DRAGSCROLL_DIVISOR_V;
 
 #ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
@@ -158,17 +172,18 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
         } else {
             last_scroll_time = timer_read32();
 #endif
+
             // Assign integer parts of accumulated scroll values to the mouse report
-            mouse_report.h = (int8_t)scroll_accumulated_h;
+            mouse_report.h = (scroll_value_t)scroll_accumulated_h;
 #ifdef PLOOPY_DRAGSCROLL_INVERT
-            mouse_report.v = -(int8_t)scroll_accumulated_v;
+            mouse_report.v = -(scroll_value_t)scroll_accumulated_v;
 #else
-            mouse_report.v = (int8_t)scroll_accumulated_v;
+            mouse_report.v = (scroll_value_t)scroll_accumulated_v;
 #endif
 
             // Update accumulated scroll values by subtracting the integer parts
-            scroll_accumulated_h -= (int8_t)scroll_accumulated_h;
-            scroll_accumulated_v -= (int8_t)scroll_accumulated_v;
+            scroll_accumulated_h -= (scroll_value_t)scroll_accumulated_h;
+            scroll_accumulated_v -= (scroll_value_t)scroll_accumulated_v;
 #ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
         }
 #endif
@@ -180,15 +195,6 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
 
     return pointing_device_task_user(mouse_report);
 }
-
-#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
-void housekeeping_task_kb(void) {
-    if (timer_elapsed32(last_scroll_time) > 100) {
-        scroll_accumulated_h = 0;
-        scroll_accumulated_v = 0;
-    }
-}
-#endif
 
 bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
     if (debug_mouse) {
@@ -219,6 +225,12 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
             toggle_drag_scroll();
         }
 #endif
+    }
+
+    if (keycode == SCROLL_SNAP) {
+        if (record->event.pressed) {
+            toggle_scroll_snap();
+        }
     }
 
     return true;
